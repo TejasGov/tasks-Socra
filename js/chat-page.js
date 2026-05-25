@@ -68,9 +68,8 @@ async function switchChannel(ch, el) {
   );
 }
 
-function canDeleteMessage(row) {
-  const uid = currentUser();
-  return uid && (uid === 'owner' || row.uid === uid);
+function canDeleteMessage() {
+  return isTeamMember(currentUser());
 }
 
 function removeMessageFromDom(messageId) {
@@ -162,7 +161,7 @@ function buildMessageNode(row) {
   meta.appendChild(author);
   meta.appendChild(time);
 
-  if (row.id && canDeleteMessage(row)) {
+  if (row.id && canDeleteMessage()) {
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.className = 'msg-delete-btn';

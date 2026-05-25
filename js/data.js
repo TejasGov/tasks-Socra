@@ -328,6 +328,10 @@ async function dbCanPost(uid) {
   }
 }
 
+function isTeamMember(uid) {
+  return !!(uid && USERS[uid]);
+}
+
 async function dbDeleteMessage(messageId) {
   try {
     if (!rateLimiter('chat_delete', 30)) {
@@ -335,14 +339,13 @@ async function dbDeleteMessage(messageId) {
     }
     if (!sb) return { error: 'Database unavailable.' };
     const uid = currentUser();
-    if (!uid) return { error: 'Not signed in.' };
+    if (!isTeamMember(uid)) return { error: 'Not signed in.' };
     const { data: row, error: fetchErr } = await sb
       .from('chat_messages')
       .select('uid,channel')
       .eq('id', messageId)
       .maybeSingle();
     if (fetchErr || !row) return { error: 'Message not found.' };
-    if (uid !== 'owner' && row.uid !== uid) return { error: 'You can only delete your own messages.' };
     const { error } = await sb.from('chat_messages').delete().eq('id', messageId);
     if (error) return { error: error.message || 'Failed to delete message.' };
     return { error: null };
@@ -422,6 +425,7 @@ window.getPhase = getPhase;
 window.isMeeting = isMeeting;
 window.dbGetMessages = dbGetMessages;
 window.dbSendMessage = dbSendMessage;
+window.isTeamMember = isTeamMember;
 window.dbDeleteMessage = dbDeleteMessage;
 window.dbGetComments = dbGetComments;
 window.dbGetAllDayCommentsMap = dbGetAllDayCommentsMap;
