@@ -3,18 +3,48 @@ markActive('overview');
 updateNavUser();
 
 const today = new Date();
-const demo = new Date(2026,7,20);
+const demo = new Date(2026, 7, 20);
 const daysLeft = Math.max(0, Math.ceil((demo - today) / 86400000));
 document.getElementById('days-left').textContent = daysLeft;
 
 const phaseList = document.getElementById('phase-list');
 window.serverData = { phaseStatuses: {} };
 
+function appendPhaseRow(el, dot, info, statusEl, actionBtn) {
+  el.appendChild(dot);
+  el.appendChild(info);
+  el.appendChild(statusEl);
+  if (actionBtn) el.appendChild(actionBtn);
+  phaseList.appendChild(el);
+}
+
+function makePhaseBtn(className, label, onClick, options) {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = className;
+  btn.style.cssText = 'margin-left:auto;padding:2px 8px;font-size:11px';
+  btn.textContent = label;
+  btn.addEventListener('click', onClick);
+  if (options && options.hoverLabel) {
+    btn.classList.add('phase-undo-btn');
+    btn.dataset.defaultLabel = label;
+    btn.dataset.hoverLabel = options.hoverLabel;
+    btn.addEventListener('mouseenter', () => {
+      btn.textContent = btn.dataset.hoverLabel;
+    });
+    btn.addEventListener('mouseleave', () => {
+      btn.textContent = btn.dataset.defaultLabel;
+    });
+  }
+  return btn;
+}
+
 function renderPhases() {
   phaseList.replaceChildren();
+  const isOwner = currentUser() === 'owner';
+
   PHASES.forEach((p, i) => {
     const status = window.serverData.phaseStatuses[i] || 'pending';
-    const isOwner = currentUser() === 'owner';
     let statusText = 'Pending';
     let statusBg = 'var(--surface2)';
     let statusTx = 'var(--text-2)';
@@ -40,74 +70,56 @@ function renderPhases() {
     const statusEl = document.createElement('div');
     statusEl.className = 'phase-status';
 
+    let actionBtn = null;
+
     if (status === 'completed') {
-      statusText = 'Complete'; statusBg = '#EAF3DE'; statusTx = '#27500A';
+      statusText = 'Complete';
+      statusBg = '#EAF3DE';
+      statusTx = '#27500A';
     } else if (status === 'requested') {
-      statusText = 'Review Pending'; statusBg = '#FAEEDA'; statusTx = '#BA7517';
+      statusText = 'Review Pending';
+      statusBg = '#FAEEDA';
+      statusTx = '#BA7517';
       if (isOwner) {
-        const btn = document.createElement('button');
-        btn.className = 'btn btn-primary btn-sm';
-        btn.style.cssText = 'margin-left:auto;padding:2px 8px;font-size:11px';
-        btn.textContent = 'Approve';
-        btn.addEventListener('click', () => approvePhase(i));
-        el.appendChild(dot);
-        el.appendChild(info);
-        statusEl.style.background = statusBg;
-        statusEl.style.color = statusTx;
-        statusEl.textContent = statusText;
-        el.appendChild(statusEl);
-        el.appendChild(btn);
-        phaseList.appendChild(el);
-        return;
+        actionBtn = makePhaseBtn('btn btn-primary btn-sm', 'Approve', () => approvePhase(i));
+      } else {
+        actionBtn = makePhaseBtn(
+          'btn btn-ghost btn-sm phase-undo-btn',
+          'Undo',
+          () => undoPhaseRequest(i),
+          { hoverLabel: 'Request Completion' }
+        );
       }
     } else {
-      statusText = 'In progress'; statusBg = p.bg; statusTx = p.text;
+      statusText = 'In progress';
+      statusBg = p.bg;
+      statusTx = p.text;
       if (isOwner) {
-        const btn = document.createElement('button');
-        btn.className = 'btn btn-ghost btn-sm';
-        btn.style.cssText = 'margin-left:auto;padding:2px 8px;font-size:11px';
-        btn.textContent = 'Mark Complete';
-        btn.addEventListener('click', () => markComplete(i));
-        el.appendChild(dot);
-        el.appendChild(info);
-        statusEl.style.background = statusBg;
-        statusEl.style.color = statusTx;
-        statusEl.textContent = statusText;
-        el.appendChild(statusEl);
-        el.appendChild(btn);
-        phaseList.appendChild(el);
-        return;
+        actionBtn = makePhaseBtn('btn btn-ghost btn-sm', 'Mark Complete', () => markComplete(i));
       } else {
-        const btn = document.createElement('button');
-        btn.className = 'btn btn-ghost btn-sm';
-        btn.style.cssText = 'margin-left:auto;padding:2px 8px;font-size:11px';
-        btn.textContent = 'Request Completion';
-        btn.addEventListener('click', () => requestComplete(i));
-        el.appendChild(dot);
-        el.appendChild(info);
-        statusEl.style.background = statusBg;
-        statusEl.style.color = statusTx;
-        statusEl.textContent = statusText;
-        el.appendChild(statusEl);
-        el.appendChild(btn);
-        phaseList.appendChild(el);
-        return;
+        actionBtn = makePhaseBtn('btn btn-ghost btn-sm', 'Request Completion', () => requestComplete(i));
       }
     }
 
     statusEl.style.background = statusBg;
     statusEl.style.color = statusTx;
     statusEl.textContent = statusText;
-    el.appendChild(dot);
-    el.appendChild(info);
-    el.appendChild(statusEl);
-    phaseList.appendChild(el);
+    appendPhaseRow(el, dot, info, statusEl, actionBtn);
   });
 }
 
-function requestComplete(idx) { dbUpdatePhaseStatus(idx, 'requested'); }
-function markComplete(idx) { dbUpdatePhaseStatus(idx, 'completed'); }
-function approvePhase(idx) { dbUpdatePhaseStatus(idx, 'completed'); }
+function requestComplete(idx) {
+  dbUpdatePhaseStatus(idx, 'requested');
+}
+function markComplete(idx) {
+  dbUpdatePhaseStatus(idx, 'completed');
+}
+function approvePhase(idx) {
+  dbUpdatePhaseStatus(idx, 'completed');
+}
+function undoPhaseRequest(idx) {
+  dbUpdatePhaseStatus(idx, 'pending');
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('change-pwd-btn')?.addEventListener('click', openChangePassword);
@@ -125,7 +137,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 });
 
-const upcoming = MEETINGS.filter(m => m >= today);
+const upcoming = MEETINGS.filter((m) => m >= today);
 const nextM = upcoming[0];
 document.getElementById('next-meeting-date').textContent = nextM ? fmtDate(nextM) : 'No more sessions';
 

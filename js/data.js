@@ -328,18 +328,50 @@ async function dbCanPost(uid) {
   }
 }
 
-function subscribeToMessages(channel, onMessage) {
+async function dbDeleteMessage(messageId) {
+  try {
+    if (!rateLimiter('chat_delete', 30)) {
+      return { error: 'Rate limit exceeded. Please wait a moment.' };
+    }
+    if (!sb) return { error: 'Database unavailable.' };
+    const uid = currentUser();
+    if (!uid) return { error: 'Not signed in.' };
+    const { data: row, error: fetchErr } = await sb
+      .from('chat_messages')
+      .select('uid,channel')
+      .eq('id', messageId)
+      .maybeSingle();
+    if (fetchErr || !row) return { error: 'Message not found.' };
+    if (uid !== 'owner' && row.uid !== uid) return { error: 'You can only delete your own messages.' };
+    const { error } = await sb.from('chat_messages').delete().eq('id', messageId);
+    if (error) return { error: error.message || 'Failed to delete message.' };
+    return { error: null };
+  } catch (e) {
+    console.warn('dbDeleteMessage:', e);
+    return { error: 'Failed to delete message.' };
+  }
+}
+
+function subscribeToMessages(channel, onMessage, onDelete) {
   if (!sb) return { unsubscribe: () => {} };
-  const ch = sb
-    .channel('messages:' + channel + ':' + Date.now())
-    .on(
+  const ch = sb.channel('messages:' + channel + ':' + Date.now());
+  ch.on(
+    'postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: 'channel=eq.' + channel },
+    (payload) => {
+      if (payload.new) onMessage(payload.new);
+    }
+  );
+  if (onDelete) {
+    ch.on(
       'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: 'channel=eq.' + channel },
+      { event: 'DELETE', schema: 'public', table: 'chat_messages', filter: 'channel=eq.' + channel },
       (payload) => {
-        if (payload.new) onMessage(payload.new);
+        if (payload.old) onDelete(payload.old);
       }
-    )
-    .subscribe();
+    );
+  }
+  ch.subscribe();
   return ch;
 }
 
@@ -390,6 +422,7 @@ window.getPhase = getPhase;
 window.isMeeting = isMeeting;
 window.dbGetMessages = dbGetMessages;
 window.dbSendMessage = dbSendMessage;
+window.dbDeleteMessage = dbDeleteMessage;
 window.dbGetComments = dbGetComments;
 window.dbGetAllDayCommentsMap = dbGetAllDayCommentsMap;
 window.dbAddComment = dbAddComment;

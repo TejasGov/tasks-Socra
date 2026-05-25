@@ -56,10 +56,45 @@ async function switchChannel(ch, el) {
   document.getElementById('chat-title').textContent = '# ' + ch;
   document.getElementById('msg-input').placeholder = 'Message #' + ch + '…';
   await renderMessages();
-  _msgSubscription = subscribeToMessages(ch, (row) => {
-    if (row.id && _renderedMsgIds.has(row.id)) return;
-    appendMessage(row);
-  });
+  _msgSubscription = subscribeToMessages(
+    ch,
+    (row) => {
+      if (row.id && _renderedMsgIds.has(row.id)) return;
+      appendMessage(row);
+    },
+    (old) => {
+      if (old && old.id) removeMessageFromDom(old.id);
+    }
+  );
+}
+
+function canDeleteMessage(row) {
+  const uid = currentUser();
+  return uid && (uid === 'owner' || row.uid === uid);
+}
+
+function removeMessageFromDom(messageId) {
+  const el = document.querySelector('[data-msg-id="' + messageId + '"]');
+  if (el) el.remove();
+  _renderedMsgIds.delete(messageId);
+  const area = document.getElementById('messages-area');
+  if (area && !area.querySelector('.msg-group')) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'text-align:center;color:var(--text-3);font-size:13px;padding:2rem 0';
+    empty.textContent = 'No messages yet. Start the conversation!';
+    area.appendChild(empty);
+  }
+}
+
+async function deleteMessage(messageId) {
+  if (!confirm('Delete this message?')) return;
+  const { error } = await dbDeleteMessage(messageId);
+  if (error) {
+    alert(error);
+    return;
+  }
+  removeMessageFromDom(messageId);
+  renderPinnedDates();
 }
 
 async function renderMessages() {
@@ -126,6 +161,15 @@ function buildMessageNode(row) {
 
   meta.appendChild(author);
   meta.appendChild(time);
+
+  if (row.id && canDeleteMessage(row)) {
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'msg-delete-btn';
+    delBtn.textContent = 'Delete';
+    delBtn.addEventListener('click', () => deleteMessage(row.id));
+    meta.appendChild(delBtn);
+  }
 
   const text = document.createElement('div');
   text.className = 'msg-text';

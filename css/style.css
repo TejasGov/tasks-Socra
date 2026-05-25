@@ -75,6 +75,34 @@ nav {
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; user-select: none;
 }
+.nav-logout-btn {
+  font-size: 12px;
+  padding: 5px 12px;
+  color: var(--text-2);
+  border-color: var(--border-strong);
+}
+.nav-logout-btn:hover {
+  color: var(--red);
+  border-color: var(--red);
+  background: var(--red-light);
+}
+.msg-delete-btn {
+  margin-left: auto;
+  font-size: 10px;
+  padding: 2px 8px;
+  border: none;
+  background: none;
+  color: var(--text-3);
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: 'Outfit', sans-serif;
+}
+.msg-delete-btn:hover {
+  color: var(--red);
+  background: var(--red-light);
+}
+.msg-meta { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.phase-undo-btn { min-width: 118px; }
 
 /* PAGE LAYOUT */
 .page { max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem; }
