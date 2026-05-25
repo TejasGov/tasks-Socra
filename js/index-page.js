@@ -134,33 +134,47 @@ function openChangePassword() {
 function closeChangePassword() {
   document.getElementById('pwd-modal').style.display = 'none';
 }
-async function submitChangePassword() {
+function submitChangePassword() {
   const oldPassword = document.getElementById('old-pwd').value;
   const newPassword = document.getElementById('new-pwd').value;
-  const actualUserIdMap = { 'owner': 'PD01', 'tejas': 'TG05', 'atshal': 'AK03' };
-  const userId = actualUserIdMap[currentUser()];
-  
-  if (!oldPassword || !newPassword) return;
-  
-  // Reverting to the mock API behavior as requested
-  try {
-    const res = await fetch('/api/change-password', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId, oldPassword, newPassword })
-    });
-    const data = await res.json();
-    if (res.ok) {
-      alert('Password changed successfully. Please log in again.');
-      logout();
-    } else {
-      const err = document.getElementById('pwd-err');
-      err.textContent = data.error || 'Failed to change password';
-      err.style.display = 'block';
-    }
-  } catch (e) {
-    const err = document.getElementById('pwd-err');
-    err.textContent = 'Serverless environment: mock API not available.';
+  const err = document.getElementById('pwd-err');
+  const loginId = loginIdForUid(currentUser());
+
+  err.style.display = 'none';
+  err.textContent = '';
+
+  if (!oldPassword || !newPassword) {
+    err.textContent = 'Enter both old and new password.';
     err.style.display = 'block';
+    return;
   }
+  if (newPassword.length < 4) {
+    err.textContent = 'New password must be at least 4 characters.';
+    err.style.display = 'block';
+    return;
+  }
+  if (!loginId) {
+    err.textContent = 'Could not identify your account.';
+    err.style.display = 'block';
+    return;
+  }
+  if (!verifyLogin(loginId, oldPassword)) {
+    err.textContent = 'Current password is incorrect.';
+    err.style.display = 'block';
+    return;
+  }
+  if (oldPassword === newPassword) {
+    err.textContent = 'Choose a different new password.';
+    err.style.display = 'block';
+    return;
+  }
+
+  setPasswordForLogin(loginId, newPassword);
+  alert('Password changed successfully. Please sign in again.');
+  closeChangePassword();
+  logout();
 }
+
+window.openChangePassword = openChangePassword;
+window.closeChangePassword = closeChangePassword;
+window.submitChangePassword = submitChangePassword;

@@ -1,10 +1,4 @@
-/* js/login.js — Mock sign-in (loaded by login.html) */
-
-const MOCK_CREDENTIALS = {
-  PD01: { pwd: '0202', uid: 'owner' },
-  TG05: { pwd: '1515', uid: 'tejas' },
-  AK03: { pwd: '0909', uid: 'atshal' },
-};
+/* js/login.js — Mock sign-in (requires js/data.js + js/auth.js) */
 
 document.addEventListener('DOMContentLoaded', () => {
   localStorage.removeItem('token');
@@ -25,13 +19,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const remember = document.getElementById('rememberMe').checked;
     const errorMsg = document.getElementById('error-msg');
 
-    const user = MOCK_CREDENTIALS[userId];
-    if (user && user.pwd === password) {
+    const uid = AUTH_UID_BY_LOGIN[userId];
+    if (uid && verifyLogin(userId, password)) {
       if (remember) {
-        localStorage.setItem('currentUser', user.uid);
+        localStorage.setItem('currentUser', uid);
         sessionStorage.removeItem('currentUser');
       } else {
-        sessionStorage.setItem('currentUser', user.uid);
+        sessionStorage.setItem('currentUser', uid);
         localStorage.removeItem('currentUser');
       }
       localStorage.setItem('savedUserId', userId);
