@@ -198,6 +198,7 @@ document.getElementById('prev-btn').addEventListener('click', () => { curMonth--
 document.getElementById('next-btn').addEventListener('click', () => { curMonth++; if(curMonth>11){curMonth=0;curYear++;} render(); });
 
 document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('comment-post-btn')?.addEventListener('click', submitComment);
   dayCommentsMap = await dbGetAllDayCommentsMap();
   render();
   sb.channel('calendar_comments:' + Date.now())

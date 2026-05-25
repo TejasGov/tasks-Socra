@@ -80,7 +80,7 @@
   </div>
   <div class="nav-user">
     <span id="nav-name"></span>
-    <div class="avatar" id="nav-avatar" onclick="logout()" title="Logout">YO</div>
+    <div class="avatar" id="nav-avatar" title="Logout">YO</div>
   </div>
 </nav>
 
@@ -128,7 +128,7 @@
         <div class="comments-list" id="comments-list"></div>
         <div class="comment-input-row">
           <textarea id="comment-input" placeholder="Add a comment…" style="min-height:52px;font-size:13px;flex:1"></textarea>
-          <button class="btn btn-primary btn-sm" onclick="submitComment()" style="height:36px;align-self:flex-end">Post</button>
+          <button type="button" id="comment-post-btn" class="btn btn-primary btn-sm" style="height:36px;align-self:flex-end">Post</button>
         </div>
       </div>
     </div>
@@ -138,6 +138,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="js/data.js"></script>
+<script src="js/nav.js"></script>
 <script src="js/calendar-page.js"></script>
 </body>
 </html>

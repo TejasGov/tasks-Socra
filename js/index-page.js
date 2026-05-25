@@ -110,6 +110,10 @@ function markComplete(idx) { dbUpdatePhaseStatus(idx, 'completed'); }
 function approvePhase(idx) { dbUpdatePhaseStatus(idx, 'completed'); }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('change-pwd-btn')?.addEventListener('click', openChangePassword);
+  document.getElementById('pwd-save-btn')?.addEventListener('click', submitChangePassword);
+  document.getElementById('pwd-cancel-btn')?.addEventListener('click', closeChangePassword);
+
   const statuses = await dbGetPhaseStatuses();
   window.serverData = { phaseStatuses: statuses };
   renderPhases();
