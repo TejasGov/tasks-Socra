@@ -76,6 +76,12 @@ function renderPhases() {
       statusText = 'Complete';
       statusBg = '#EAF3DE';
       statusTx = '#27500A';
+      actionBtn = makePhaseBtn(
+        'btn btn-ghost btn-sm phase-undo-btn',
+        'Undo',
+        () => undoPhaseComplete(i),
+        { hoverLabel: isOwner ? 'Mark Complete' : 'Request Completion' }
+      );
     } else if (status === 'requested') {
       statusText = 'Review Pending';
       statusBg = '#FAEEDA';
@@ -118,6 +124,9 @@ function approvePhase(idx) {
   dbUpdatePhaseStatus(idx, 'completed');
 }
 function undoPhaseRequest(idx) {
+  dbUpdatePhaseStatus(idx, 'pending');
+}
+function undoPhaseComplete(idx) {
   dbUpdatePhaseStatus(idx, 'pending');
 }
 
